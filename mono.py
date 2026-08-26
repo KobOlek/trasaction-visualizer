@@ -13,7 +13,7 @@ headers = {
     "X-Token": TOKEN,
 }
 
-WEBHOOK_URL = "trasaction-visualizer.onrender.com/mono-webhook"
+WEBHOOK_URL = "https://trasaction-visualizer.onrender.com/mono-webhook"
 payload = {
     "webHookUrl": WEBHOOK_URL
 }
