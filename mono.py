@@ -13,7 +13,7 @@ headers = {
     "X-Token": TOKEN,
 }
 
-WEBHOOK_URL = "https://e4ce-178-212-97-22.ngrok-free.app/mono-webhook"
+WEBHOOK_URL = "https://2dc0-178-212-97-53.ngrok-free.app/mono-webhook"
 payload = {
     "webHookUrl": WEBHOOK_URL
 }

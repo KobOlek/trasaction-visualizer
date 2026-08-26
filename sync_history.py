@@ -1,32 +1,29 @@
-import sqlite3
-from datetime import datetime
+import os
+os.environ["LC_ALL"] = "en_US.UTF-8"
+
+import psycopg
+
 from mono import get_jar, get_jar_history
-
-DB_NAME = "monobank.db"
-
+from datetime import datetime
 
 def sync_history():
-    print("⏳ Отримуємо інформацію про банку...")
     jar = get_jar()
 
     if not jar:
-        print("❌ Помилка: Банку не знайдено.")
+        print("Error. Jar was not found.")
         return
 
     jar_id = jar['id']
-    print(f"✅ Знайдено банку: '{jar['title']}'. Завантажуємо історію за останні 31 день...")
 
-    # Викликаємо вашу функцію з mono.py
     history = get_jar_history(jar_id)
 
     if not history:
-        print("ℹ️ Історія порожня або виникла помилка (можливо, спрацював ліміт запитів 1 раз на хвилину).")
+        print("History is empty.")
         return
 
-    print(f"📥 Отримано {len(history)} транзакцій. Записуємо в базу даних...")
+    print(f"{len(history)} trasactions received.")
 
-    # Підключаємось до нашої існуючої бази
-    conn = sqlite3.connect(DB_NAME)
+    conn = psycopg.connect(dbname="monobank", user="postgres", password="25092008Olek", host="localhost", port=5432)
     cursor = conn.cursor()
 
     added_count = 0
@@ -45,7 +42,7 @@ def sync_history():
 
         # Записуємо в базу
         cursor.execute(
-            'INSERT INTO transactions (description, amount, timestamp) VALUES (?, ?, ?)',
+            'INSERT INTO transactions (description, amount, timestamp) VALUES (%s, %s, %s)',
             (description, amount, tx_time)
         )
         added_count += 1
