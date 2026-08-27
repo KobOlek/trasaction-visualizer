@@ -36,7 +36,7 @@ init_db()
 def show_statement():
     with psycopg.connect(DB_URL) as conn:
         with conn.cursor(row_factory=dict_row) as cursor:
-            cursor.execute('SELECT description, amount, timestamp, balance FROM transactions WHERE amount >= 1g ORDER BY id DESC')
+            cursor.execute('SELECT description, amount, timestamp, balance FROM transactions WHERE amount >= 1 ORDER BY id DESC')
             rows = cursor.fetchall()
 
     if rows and rows[0]['balance'] is not None:
