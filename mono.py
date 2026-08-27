@@ -7,18 +7,18 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-TOKEN = os.getenv("API_KEY")
-
-headers = {
-    "X-Token": TOKEN,
-}
-
-WEBHOOK_URL = "https://trasaction-visualizer.onrender.com/mono-webhook"
-payload = {
-    "webHookUrl": WEBHOOK_URL
-}
-
 def activate_webhook():
+    TOKEN = os.getenv("API_KEY")
+
+    headers = {
+        "X-Token": TOKEN,
+    }
+
+    WEBHOOK_URL = "https://trasaction-visualizer.onrender.com/mono-webhook"
+    payload = {
+        "webHookUrl": WEBHOOK_URL
+    }
+
     mono_api_url = "https://api.monobank.ua/personal/webhook"
 
     print(f"⏳ Реєстрація вебхука в Monobank: {WEBHOOK_URL}...")
