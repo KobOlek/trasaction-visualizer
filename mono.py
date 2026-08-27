@@ -7,13 +7,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+TOKEN = os.getenv("API_KEY")
+
+headers = {
+    "X-Token": TOKEN,
+}
+
 def activate_webhook():
-    TOKEN = os.getenv("API_KEY")
-
-    headers = {
-        "X-Token": TOKEN,
-    }
-
     WEBHOOK_URL = "https://trasaction-visualizer.onrender.com/mono-webhook"
     payload = {
         "webHookUrl": WEBHOOK_URL
@@ -56,3 +56,5 @@ def get_jar_history(jar_id: str) -> dict:
             r['amount'] /= 100
         return res
     return {}
+
+activate_webhook()

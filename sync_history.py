@@ -1,10 +1,15 @@
 import os
+
 os.environ["LC_ALL"] = "en_US.UTF-8"
 
 import psycopg
-
 from mono import get_jar, get_jar_history
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+from dotenv import load_dotenv
+
+load_dotenv()
+
+DB_URL = os.getenv("DATABASE_URL")
 
 def sync_history():
     jar = get_jar()
@@ -14,41 +19,47 @@ def sync_history():
         return
 
     jar_id = jar['id']
-
     history = get_jar_history(jar_id)
 
     if not history:
         print("History is empty.")
         return
 
-    print(f"{len(history)} trasactions received.")
-
-    conn = psycopg.connect(dbname="monobank", user="postgres", password="25092008Olek", host="localhost", port=5432)
-    cursor = conn.cursor()
+    print(f"{len(history)} transactions received. Saving to database...")
 
     added_count = 0
 
-    # Monobank віддає транзакції від новіших до старіших.
-    # Щоб у базі вони йшли в правильному хронологічному порядку (і правильними ID),
-    # ми перевернемо список за допомогою reversed()
-    for tx in reversed(history):
-        # amount вже поділено на 100 у вашому mono.py, тому беремо як є
-        amount = tx['amount']
-        description = tx.get('description', 'Поповнення банки')
+    with psycopg.connect(DB_URL) as conn:
+        with conn.cursor() as cursor:
 
-        # Monobank віддає час у форматі Unix timestamp (напр. 1717448075)
-        # Нам треба перетворити його у зручний рядок "DD.MM.YYYY HH:MM", як у нашому app.py
-        tx_time = datetime.fromtimestamp(tx['time']).strftime("%d.%m.%Y %H:%M")
+            for tx in reversed(history):
+                # amount вже поділено на 100 у mono.py
+                amount = tx['amount']
+                description = tx.get('description', 'Поповнення банки')
 
-        # Записуємо в базу
-        cursor.execute(
-            'INSERT INTO transactions (description, amount, timestamp) VALUES (%s, %s, %s)',
-            (description, amount, tx_time)
-        )
-        added_count += 1
+                balance = tx.get('balance', 0) / 100
 
-    # Зберігаємо зміни та закриваємо з'єднання
-    conn.commit()
-    conn.close()
+                tx_time_unix = tx['time']
+                utc_time = datetime.fromtimestamp(tx_time_unix, tz=timezone.utc)
+                kyiv_time = utc_time + timedelta(hours=3)
+                tx_time = kyiv_time.replace(tzinfo=None)
 
-    print(f"🎉 Успішно збережено {added_count} транзакцій в SQLite!")
+                cursor.execute(
+                    'INSERT INTO transactions (description, amount, timestamp, balance) VALUES (%s, %s, %s, %s)',
+                    (description, amount, tx_time, balance)
+                )
+                added_count += 1
+
+            cursor.execute('''
+                           SELECT setval(
+                                          pg_get_serial_sequence('transactions', 'id'),
+                                          COALESCE(MAX(id), 1)
+                                  )
+                           FROM transactions;
+                           ''')
+
+    print(f"{added_count} transactions successfully saved.")
+
+
+if __name__ == "__main__":
+    sync_history()
